@@ -5,6 +5,8 @@ import (
   "log"
   "encoding/json"
   "net/http"
+  "reflect"
+  "strconv"
   "github.com/gorilla/mux"
 )
 
@@ -46,6 +48,18 @@ func getBooks(w http.ResponseWriter, r *http.Request) {
 
 func getBook(w http.ResponseWriter, r *http.Request) {
   log.Println("Get one book")
+  // getting request variables
+  params := mux.Vars(r)
+  // converting data
+  i, _ := strconv.Atoi(params["id"])
+  // printing data type
+  log.Println(reflect.TypeOf(i))
+  // looping static data
+  for _, book := range books {
+    if book.ID == i {
+      json.NewEncoder(w).Encode(&book) // passing pointer to book slice
+    }
+  }
 }
 
 func addBook(w http.ResponseWriter, r *http.Request) {

@@ -33,7 +33,7 @@ func main() {
   router.HandleFunc("/books", getBooks).Methods("GET")
   router.HandleFunc("/books/{id}", getBook).Methods("GET")
   router.HandleFunc("/books", addBook).Methods("POST")
-  router.HandleFunc("/books/{id}", updateBook).Methods("PUT")
+  router.HandleFunc("/books", updateBook).Methods("PUT") // whole object
   router.HandleFunc("/books/{id}", removeBook).Methods("DELETE")
   // server listening - logging errors
   log.Fatal(http.ListenAndServe(":8000", router))
@@ -77,6 +77,18 @@ func addBook(w http.ResponseWriter, r *http.Request) {
 
 func updateBook(w http.ResponseWriter, r *http.Request) {
   log.Println("Updates a book")
+  // type Book (struct)
+  var book Book
+  // map fields to the fields inside the variable book
+  json.NewDecoder(r.Body).Decode(&book)
+  // looping books
+  for i, item := range books {
+    if item.ID == book.ID {
+      books[i] = book
+    }
+  }
+  // getting the slice - return
+  json.NewEncoder(w).Encode(books)
 }
 
 func removeBook(w http.ResponseWriter, r *http.Request) {

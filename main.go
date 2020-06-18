@@ -62,8 +62,17 @@ func getBook(w http.ResponseWriter, r *http.Request) {
   }
 }
 
+// curl -X POST -H "Content-Type: application/json" --data '{"id": 3, "title": "C++ is Old", "author": "Mr C++", "year":"2010"}' http://localhost:8000/books
 func addBook(w http.ResponseWriter, r *http.Request) {
   log.Println("Add one book")
+  // type Book (struct)
+  var book Book
+  // getting requests body
+  _ = json.NewDecoder(r.Body).Decode(&book)
+  // appending to slice
+  books = append(books, book)
+  // returning the whole list of books
+  json.NewEncoder(w).Encode(books)
 }
 
 func updateBook(w http.ResponseWriter, r *http.Request) {

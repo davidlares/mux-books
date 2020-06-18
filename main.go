@@ -28,7 +28,8 @@ func main() {
 
   // appending book slice
   books = append(books, Book{ID: 1, Title: "Golang pointers", Author: "Mr. GoLang", Year: "2010"},
-    Book{ID: 2, Title: "Golang routines", Author: "Mr. GoRoutines", Year: "2010"})
+    Book{ID: 2, Title: "Golang routines", Author: "Mr. GoRoutines", Year: "2010"},
+    Book{ID: 3, Title: "Golang APIs", Author: "Mr. GoAPIs", Year: "2010"})
 
   router.HandleFunc("/books", getBooks).Methods("GET")
   router.HandleFunc("/books/{id}", getBook).Methods("GET")
@@ -75,6 +76,7 @@ func addBook(w http.ResponseWriter, r *http.Request) {
   json.NewEncoder(w).Encode(books)
 }
 
+// curl -X PUT -H "Content-Type: application/json" --data '{"id": 2, "title": "C++ is Great", "author": "Mr C++", "year":"2020"}' http://localhost:8000/books
 func updateBook(w http.ResponseWriter, r *http.Request) {
   log.Println("Updates a book")
   // type Book (struct)
@@ -93,4 +95,16 @@ func updateBook(w http.ResponseWriter, r *http.Request) {
 
 func removeBook(w http.ResponseWriter, r *http.Request) {
   log.Println("Delete a book")
+  // params map
+  params := mux.Vars(r)
+  // getting id converted
+  id, _ := strconv.Atoi(params["id"])
+  // looping
+  for i, item := range books {
+    if item.ID == id {
+      books = append(books[:i], books[i+1:]...)
+    }
+  }
+  // getting the slice - return
+  json.NewEncoder(w).Encode(books)
 }

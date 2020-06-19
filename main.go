@@ -2,109 +2,43 @@
 package main
 
 import (
+  // custom
+  "github.com/davidlares/books-api/controllers"
+  "github.com/davidlares/books-api/models"
+  "github.com/davidlares/books-api/driver"
+  // env
+  "github.com/subosito/gotenv"
+  // named
   "log"
-  "encoding/json"
   "net/http"
-  "reflect"
-  "strconv"
   "github.com/gorilla/mux"
+  "database/sql"
 )
 
-// book model
-type Book struct {
-  ID int `json:id`
-  Title string `json:title`
-  Author string `json:author`
-  Year string `json:year`
-}
+var books []models.Book
 
-// book slice (handling book resources)
-var books []Book
+var db *sql.DB
+
+// init
+func init() {
+  // load all env variables
+  gotenv.Load()
+}
 
 // main function
 func main() {
+  // database driver
+  db = driver.ConnectDB()
   // creating a router
   router := mux.NewRouter()
-
-  // appending book slice
-  books = append(books, Book{ID: 1, Title: "Golang pointers", Author: "Mr. GoLang", Year: "2010"},
-    Book{ID: 2, Title: "Golang routines", Author: "Mr. GoRoutines", Year: "2010"},
-    Book{ID: 3, Title: "Golang APIs", Author: "Mr. GoAPIs", Year: "2010"})
-
-  router.HandleFunc("/books", getBooks).Methods("GET")
-  router.HandleFunc("/books/{id}", getBook).Methods("GET")
-  router.HandleFunc("/books", addBook).Methods("POST")
-  router.HandleFunc("/books", updateBook).Methods("PUT") // whole object
-  router.HandleFunc("/books/{id}", removeBook).Methods("DELETE")
+  // controller instance
+  controller := controllers.Controller{}
+  // functions
+  router.HandleFunc("/books", controller.GetBooks(db)).Methods("GET")
+  router.HandleFunc("/books/{id}", controller.GetBook(db)).Methods("GET")
+  router.HandleFunc("/books", controller.AddBook(db)).Methods("POST")
+  router.HandleFunc("/books", controller.UpdateBook(db)).Methods("PUT") // whole object
+  router.HandleFunc("/books/{id}", controller.RemoveBook(db)).Methods("DELETE")
   // server listening - logging errors
   log.Fatal(http.ListenAndServe(":8000", router))
-}
-
-// handling functions
-func getBooks(w http.ResponseWriter, r *http.Request) {
-  log.Println("Get all books")
-  // encoding status data into JSON
-  json.NewEncoder(w).Encode(books)
-}
-
-func getBook(w http.ResponseWriter, r *http.Request) {
-  log.Println("Get one book")
-  // getting request variables
-  params := mux.Vars(r)
-  // converting data
-  i, _ := strconv.Atoi(params["id"])
-  // printing data type
-  log.Println(reflect.TypeOf(i))
-  // looping static data
-  for _, book := range books {
-    if book.ID == i {
-      json.NewEncoder(w).Encode(&book) // passing pointer to book slice
-    }
-  }
-}
-
-// curl -X POST -H "Content-Type: application/json" --data '{"id": 3, "title": "C++ is Old", "author": "Mr C++", "year":"2010"}' http://localhost:8000/books
-func addBook(w http.ResponseWriter, r *http.Request) {
-  log.Println("Add one book")
-  // type Book (struct)
-  var book Book
-  // getting requests body
-  _ = json.NewDecoder(r.Body).Decode(&book)
-  // appending to slice
-  books = append(books, book)
-  // returning the whole list of books
-  json.NewEncoder(w).Encode(books)
-}
-
-// curl -X PUT -H "Content-Type: application/json" --data '{"id": 2, "title": "C++ is Great", "author": "Mr C++", "year":"2020"}' http://localhost:8000/books
-func updateBook(w http.ResponseWriter, r *http.Request) {
-  log.Println("Updates a book")
-  // type Book (struct)
-  var book Book
-  // map fields to the fields inside the variable book
-  json.NewDecoder(r.Body).Decode(&book)
-  // looping books
-  for i, item := range books {
-    if item.ID == book.ID {
-      books[i] = book
-    }
-  }
-  // getting the slice - return
-  json.NewEncoder(w).Encode(books)
-}
-
-func removeBook(w http.ResponseWriter, r *http.Request) {
-  log.Println("Delete a book")
-  // params map
-  params := mux.Vars(r)
-  // getting id converted
-  id, _ := strconv.Atoi(params["id"])
-  // looping
-  for i, item := range books {
-    if item.ID == id {
-      books = append(books[:i], books[i+1:]...)
-    }
-  }
-  // getting the slice - return
-  json.NewEncoder(w).Encode(books)
 }
